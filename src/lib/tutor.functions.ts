@@ -1,8 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
 import { z } from "zod";
 
-import { createLovableAiGatewayProvider, TUTOR_MODEL } from "./ai-gateway.server";
+import { generateJson, streamToText } from "./ai-gateway.server";
 
 const CardSchema = z.object({
   question: z.string(),
@@ -32,41 +31,43 @@ const PathSchema = z.object({
 export type GeneratedPath = z.infer<typeof PathSchema>;
 export type GeneratedConcept = z.infer<typeof ConceptSchema>;
 
-function gateway() {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI is not configured (missing key).");
-  return createLovableAiGatewayProvider(key);
-}
-
 const GenerateInput = z.object({
   topic: z.string().min(2).max(120),
   level: z.enum(["beginner", "intermediate", "advanced"]),
   goal: z.string().max(300).optional(),
 });
 
+const FeedbackSchema = z.object({
+  score: z.number(),
+  verdict: z.string(),
+  missing: z.array(z.string()).optional().default([]),
+});
+
 export const generateLearningPath = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => GenerateInput.parse(input))
   .handler(async ({ data }) => {
-    const result = await generateText({
-      model: gateway()(TUTOR_MODEL),
-      output: Output.object({ schema: PathSchema }),
+    const raw = await generateJson({
+      schema: PathSchema,
       system:
         "You are an expert curriculum designer and cognitive-science-informed tutor. " +
         "You build tight, dependency-ordered concept maps. Explanations are vivid, concrete and free of filler. " +
-        "Each concept must be atomic enough to be reviewed as a single memory item.",
+        "Each concept is atomic enough to be reviewed as a single memory item.",
       prompt:
         `Design an adaptive learning path on "${data.topic}" for a ${data.level} learner.` +
         (data.goal ? ` Their goal: ${data.goal}.` : "") +
-        ` Return 5-7 concepts ordered by prerequisite dependency. For each concept give:` +
-        ` a one-sentence summary, a 120-180 word explanation (markdown-free plain prose, may use short paragraphs),` +
-        ` a memorable analogy, the single most common misconception, difficulty 1-5,` +
-        ` prerequisite concept titles (from earlier concepts, may be empty),` +
-        ` and 2-3 recall questions with 4 answer choices each plus a short hint and an ideal answer.`,
+        `\nReturn JSON shaped exactly like:\n` +
+        `{"title":string,"description":string,"concepts":[{"title":string,"summary":string,` +
+        `"explanation":string,"analogy":string,"misconception":string,"difficulty":1-5,` +
+        `"prerequisites":[string],"cards":[{"question":string,"answer":string,` +
+        `"choices":[4 strings],"correctIndex":0-3,"hint":string}]}]}\n` +
+        `Rules: exactly 6 concepts ordered by prerequisite dependency; explanation is 110-160 words of ` +
+        `plain prose (no markdown); prerequisites reference earlier concept titles only; ` +
+        `exactly 2 cards per concept; answer explains why the correct choice is right in one or two sentences.`,
     });
-    const out = result.output;
+
     return {
-      ...out,
-      concepts: out.concepts.map((concept) => ({
+      ...raw,
+      concepts: raw.concepts.map((concept) => ({
         ...concept,
         difficulty: Math.min(5, Math.max(1, Math.round(concept.difficulty))),
         cards: concept.cards
@@ -94,16 +95,15 @@ export const askTutor = createServerFn({ method: "POST" })
         ? "The learner is a novice here: use simple language, one concrete example, and avoid jargon."
         : data.mastery < 0.7
           ? "The learner has partial understanding: reinforce the mental model and address edge cases."
-          : "The learner is close to mastery: go deeper, connect to advanced or adjacent ideas.";
+          : "The learner is close to mastery: go deeper and connect to advanced or adjacent ideas.";
 
-    const result = await generateText({
-      model: gateway()(TUTOR_MODEL),
+    const answer = await streamToText({
       system:
         "You are a warm, precise Socratic tutor. Answer in under 160 words, plain prose, no markdown headers. " +
         "End with one short question that checks understanding.",
       prompt: `Concept: ${data.concept}\nReference explanation: ${data.explanation}\n${level}\nLearner asks: ${data.question}`,
     });
-    return { answer: await result.text };
+    return { answer };
   });
 
 const FeedbackInput = z.object({
@@ -116,19 +116,14 @@ const FeedbackInput = z.object({
 export const gradeExplanation = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => FeedbackInput.parse(input))
   .handler(async ({ data }) => {
-    const result = await generateText({
-      model: gateway()(TUTOR_MODEL),
-      output: Output.object({
-        schema: z.object({
-          score: z.number(),
-          verdict: z.string(),
-          missing: z.array(z.string()).optional().default([]),
-        }),
-      }),
+    return await generateJson({
+      schema: FeedbackSchema,
       system:
         "You grade a learner's free-recall explanation. Be encouraging but honest. " +
         "Score 0-100 on conceptual accuracy and completeness.",
-      prompt: `Concept: ${data.concept}\nPrompt: ${data.question}\nIdeal answer: ${data.correctAnswer}\nLearner wrote: ${data.learnerAnswer}\nGive a two-sentence verdict and up to 3 missing key points.`,
+      prompt:
+        `Concept: ${data.concept}\nPrompt: ${data.question}\nIdeal answer: ${data.correctAnswer}\n` +
+        `Learner wrote: ${data.learnerAnswer}\n` +
+        `Return JSON: {"score":number,"verdict":"two sentences","missing":[up to 3 short key points]}`,
     });
-    return result.output;
   });
