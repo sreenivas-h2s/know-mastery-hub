@@ -120,9 +120,9 @@ export const gradeExplanation = createServerFn({ method: "POST" })
       model: gateway()(TUTOR_MODEL),
       output: Output.object({
         schema: z.object({
-          score: z.number().min(0).max(100),
+          score: z.number(),
           verdict: z.string(),
-          missing: z.array(z.string()).max(3),
+          missing: z.array(z.string()).optional().default([]),
         }),
       }),
       system:
