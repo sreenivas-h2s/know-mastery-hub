@@ -1,4 +1,3 @@
-<<<<<<<
 import { Link } from "@tanstack/react-router";
 import { Brain, LayoutDashboard, Plus, Repeat } from "lucide-react";
 import type { ReactNode } from "react";
@@ -57,4 +56,3 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
->>>>>>>
