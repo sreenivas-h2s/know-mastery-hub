@@ -7,26 +7,26 @@ import { createLovableAiGatewayProvider, TUTOR_MODEL } from "./ai-gateway.server
 const CardSchema = z.object({
   question: z.string(),
   answer: z.string(),
-  choices: z.array(z.string()).length(4),
-  correctIndex: z.number().min(0).max(3),
-  hint: z.string(),
+  choices: z.array(z.string()),
+  correctIndex: z.number(),
+  hint: z.string().optional().default(""),
 });
 
 const ConceptSchema = z.object({
   title: z.string(),
   summary: z.string(),
   explanation: z.string(),
-  analogy: z.string(),
-  misconception: z.string(),
-  difficulty: z.number().min(1).max(5),
-  prerequisites: z.array(z.string()),
-  cards: z.array(CardSchema).min(2).max(3),
+  analogy: z.string().optional().default(""),
+  misconception: z.string().optional().default(""),
+  difficulty: z.number().optional().default(3),
+  prerequisites: z.array(z.string()).optional().default([]),
+  cards: z.array(CardSchema).min(1),
 });
 
 const PathSchema = z.object({
   title: z.string(),
   description: z.string(),
-  concepts: z.array(ConceptSchema).min(5).max(8),
+  concepts: z.array(ConceptSchema).min(1),
 });
 
 export type GeneratedPath = z.infer<typeof PathSchema>;
@@ -63,7 +63,20 @@ export const generateLearningPath = createServerFn({ method: "POST" })
         ` prerequisite concept titles (from earlier concepts, may be empty),` +
         ` and 2-3 recall questions with 4 answer choices each plus a short hint and an ideal answer.`,
     });
-    return result.output;
+    const out = result.output;
+    return {
+      ...out,
+      concepts: out.concepts.map((concept) => ({
+        ...concept,
+        difficulty: Math.min(5, Math.max(1, Math.round(concept.difficulty))),
+        cards: concept.cards
+          .filter((card) => card.choices.length >= 2)
+          .map((card) => ({
+            ...card,
+            correctIndex: Math.min(Math.max(0, card.correctIndex), card.choices.length - 1),
+          })),
+      })),
+    };
   });
 
 const ExplainInput = z.object({
