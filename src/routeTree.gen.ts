@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as PathPathIdIndexRouteImport } from './routes/path.$pathId.index'
+import { Route as PathPathIdConceptIdRouteImport } from './routes/path.$pathId.$conceptId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,17 +35,24 @@ const PathPathIdIndexRoute = PathPathIdIndexRouteImport.update({
   path: '/path/$pathId/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PathPathIdConceptIdRoute = PathPathIdConceptIdRouteImport.update({
+  id: '/path/$pathId/$conceptId',
+  path: '/path/$pathId/$conceptId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/new': typeof NewRoute
   '/review': typeof ReviewRoute
+  '/path/$pathId/$conceptId': typeof PathPathIdConceptIdRoute
   '/path/$pathId/': typeof PathPathIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/new': typeof NewRoute
   '/review': typeof ReviewRoute
+  '/path/$pathId/$conceptId': typeof PathPathIdConceptIdRoute
   '/path/$pathId': typeof PathPathIdIndexRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,29 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/new': typeof NewRoute
   '/review': typeof ReviewRoute
+  '/path/$pathId/$conceptId': typeof PathPathIdConceptIdRoute
   '/path/$pathId/': typeof PathPathIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/new' | '/review' | '/path/$pathId/'
+  fullPaths:
+    '/' | '/new' | '/review' | '/path/$pathId/$conceptId' | '/path/$pathId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/new' | '/review' | '/path/$pathId'
-  id: '__root__' | '/' | '/new' | '/review' | '/path/$pathId/'
+  to: '/' | '/new' | '/review' | '/path/$pathId/$conceptId' | '/path/$pathId'
+  id:
+    | '__root__'
+    | '/'
+    | '/new'
+    | '/review'
+    | '/path/$pathId/$conceptId'
+    | '/path/$pathId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   NewRoute: typeof NewRoute
   ReviewRoute: typeof ReviewRoute
+  PathPathIdConceptIdRoute: typeof PathPathIdConceptIdRoute
   PathPathIdIndexRoute: typeof PathPathIdIndexRoute
 }
 
@@ -99,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PathPathIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/path/$pathId/$conceptId': {
+      id: '/path/$pathId/$conceptId'
+      path: '/path/$pathId/$conceptId'
+      fullPath: '/path/$pathId/$conceptId'
+      preLoaderRoute: typeof PathPathIdConceptIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   NewRoute: NewRoute,
   ReviewRoute: ReviewRoute,
+  PathPathIdConceptIdRoute: PathPathIdConceptIdRoute,
   PathPathIdIndexRoute: PathPathIdIndexRoute,
 }
 export const routeTree = rootRouteImport
