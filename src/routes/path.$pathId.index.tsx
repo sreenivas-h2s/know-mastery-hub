@@ -14,7 +14,7 @@ import {
 } from "@/lib/learning-store";
 import { formatDue } from "@/lib/srs";
 
-export const Route = createFileRoute("/path/$pathId")({
+export const Route = createFileRoute("/path/$pathId/")({
   head: () => ({
     meta: [
       { title: "Your Learning Path — SynapseAI" },
