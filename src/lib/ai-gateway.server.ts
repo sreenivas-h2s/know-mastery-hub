@@ -34,11 +34,11 @@ function extractJson(raw: string) {
 }
 
 /** Ask for JSON, tolerate fences/prose, and validate with Zod. */
-export async function generateJson<T>(options: {
+export async function generateJson<S extends z.ZodTypeAny>(options: {
   system: string;
   prompt: string;
-  schema: z.ZodType<T>;
-}): Promise<T> {
+  schema: S;
+}): Promise<z.infer<S>> {
   const text = await streamToText({
     system: `${options.system}\n\nReply with a single raw JSON object only. No markdown, no commentary.`,
     prompt: options.prompt,
