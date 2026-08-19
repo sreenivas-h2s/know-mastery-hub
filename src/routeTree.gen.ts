@@ -12,7 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ReviewRouteImport } from './routes/review'
-import { Route as PathPathIdRouteImport } from './routes/path.$pathId'
+import { Route as PathPathIdIndexRouteImport } from './routes/path.$pathId.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,9 +29,9 @@ const ReviewRoute = ReviewRouteImport.update({
   path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PathPathIdRoute = PathPathIdRouteImport.update({
-  id: '/path/$pathId',
-  path: '/path/$pathId',
+const PathPathIdIndexRoute = PathPathIdIndexRouteImport.update({
+  id: '/path/$pathId/',
+  path: '/path/$pathId/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -39,34 +39,34 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/new': typeof NewRoute
   '/review': typeof ReviewRoute
-  '/path/$pathId': typeof PathPathIdRoute
+  '/path/$pathId/': typeof PathPathIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/new': typeof NewRoute
   '/review': typeof ReviewRoute
-  '/path/$pathId': typeof PathPathIdRoute
+  '/path/$pathId': typeof PathPathIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/new': typeof NewRoute
   '/review': typeof ReviewRoute
-  '/path/$pathId': typeof PathPathIdRoute
+  '/path/$pathId/': typeof PathPathIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/new' | '/review' | '/path/$pathId'
+  fullPaths: '/' | '/new' | '/review' | '/path/$pathId/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/new' | '/review' | '/path/$pathId'
-  id: '__root__' | '/' | '/new' | '/review' | '/path/$pathId'
+  id: '__root__' | '/' | '/new' | '/review' | '/path/$pathId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   NewRoute: typeof NewRoute
   ReviewRoute: typeof ReviewRoute
-  PathPathIdRoute: typeof PathPathIdRoute
+  PathPathIdIndexRoute: typeof PathPathIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -92,11 +92,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/path/$pathId': {
-      id: '/path/$pathId'
+    '/path/$pathId/': {
+      id: '/path/$pathId/'
       path: '/path/$pathId'
-      fullPath: '/path/$pathId'
-      preLoaderRoute: typeof PathPathIdRouteImport
+      fullPath: '/path/$pathId/'
+      preLoaderRoute: typeof PathPathIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -106,7 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   NewRoute: NewRoute,
   ReviewRoute: ReviewRoute,
-  PathPathIdRoute: PathPathIdRoute,
+  PathPathIdIndexRoute: PathPathIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
